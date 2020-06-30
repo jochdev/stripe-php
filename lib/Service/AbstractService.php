@@ -54,6 +54,11 @@ abstract class AbstractService
         return $params;
     }
 
+    protected function requestConnect($method, $path, $params, $opts)
+    {
+        return $this->getClient()->requestConnect($method, $path, static::formatParams($params), $opts);
+    }
+
     protected function request($method, $path, $params, $opts)
     {
         return $this->getClient()->request($method, $path, static::formatParams($params), $opts);

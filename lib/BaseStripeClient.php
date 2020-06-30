@@ -119,6 +119,28 @@ class BaseStripeClient implements StripeClientInterface
     /**
      * Sends a request to Stripe's API.
      *
+     * @param string $baseUrl base URL of the service that is the target of the request
+     * @param string $method the HTTP method
+     * @param string $path the path of the request
+     * @param array $params the parameters of the request
+     * @param array|\Stripe\Util\RequestOptions $opts the special modifiers of the request
+     *
+     * @return \Stripe\StripeObject the object returned by Stripe's API
+     */
+    private function requestWithBaseUrl($baseUrl, $method, $path, $params, $opts)
+    {
+        $requestor = new \Stripe\ApiRequestor($this->apiKeyForRequest($opts), $baseUrl);
+        list($response, $opts->apiKey) = $requestor->request($method, $path, $params, $opts->headers);
+        $opts->discardNonPersistentHeaders();
+        $obj = \Stripe\Util\Util::convertToStripeObject($response->json, $opts);
+        $obj->setLastResponse($response);
+
+        return $obj;
+    }
+
+    /**
+     * Sends a request to Stripe's API.
+     *
      * @param string $method the HTTP method
      * @param string $path the path of the request
      * @param array $params the parameters of the request
@@ -130,13 +152,26 @@ class BaseStripeClient implements StripeClientInterface
     {
         $opts = $this->defaultOpts->merge($opts, true);
         $baseUrl = $opts->apiBase ?: $this->getApiBase();
-        $requestor = new \Stripe\ApiRequestor($this->apiKeyForRequest($opts), $baseUrl);
-        list($response, $opts->apiKey) = $requestor->request($method, $path, $params, $opts->headers);
-        $opts->discardNonPersistentHeaders();
-        $obj = \Stripe\Util\Util::convertToStripeObject($response->json, $opts);
-        $obj->setLastResponse($response);
 
-        return $obj;
+        return $this->requestWithBaseUrl($baseUrl, $method, $path, $params, $opts);
+    }
+
+    /**
+     * Sends a request to Stripe's Connect API.
+     *
+     * @param string $method the HTTP method
+     * @param string $path the path of the request
+     * @param array $params the parameters of the request
+     * @param array|\Stripe\Util\RequestOptions $opts the special modifiers of the request
+     *
+     * @return \Stripe\StripeObject the object returned by Stripe's API
+     */
+    public function requestConnect($method, $path, $params, $opts)
+    {
+        $opts = $this->defaultOpts->merge($opts, true);
+        $baseUrl = $opts->connectBase ?: $this->getConnectBase();
+
+        return $this->requestWithBaseUrl($baseUrl, $method, $path, $params, $opts);
     }
 
     /**
